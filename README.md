@@ -1,5 +1,5 @@
 # -DOMINANCE-RELATIVE-WEIGHT-ANALYSIS
-ode Overview
+Code Overview
 Data Simulation:
 
 Means and Standard Deviations: The code initializes the mean and standard deviation matrices for the variables.
