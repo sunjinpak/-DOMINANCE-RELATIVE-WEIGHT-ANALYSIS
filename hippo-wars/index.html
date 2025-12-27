@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하마 대전쟁 - Hippo Wars</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #game-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+
+        /* Title Screen */
+        #title-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        #title-screen h1 {
+            font-size: 4em;
+            color: #ff6b6b;
+            text-shadow: 4px 4px 0 #000, 0 0 20px #ff6b6b;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        #title-screen .subtitle {
+            font-size: 1.5em;
+            color: #feca57;
+            margin-bottom: 40px;
+        }
+
+        .story-box {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #ff6b6b;
+            border-radius: 15px;
+            padding: 20px;
+            max-width: 600px;
+            margin: 20px;
+            color: #fff;
+            line-height: 1.8;
+            text-align: left;
+        }
+
+        .story-box h3 {
+            color: #feca57;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.3em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a5a);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255,107,107,0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(255,107,107,0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #5f27cd, #341f97);
+            color: white;
+        }
+
+        /* Chapter Select */
+        #chapter-select {
+            display: none;
+            padding: 20px;
+        }
+
+        #chapter-select h2 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .chapter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            max-height: 70vh;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .chapter-btn {
+            padding: 15px 10px;
+            background: linear-gradient(145deg, #2d3436, #636e72);
+            border: 2px solid #74b9ff;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .chapter-btn:hover {
+            background: linear-gradient(145deg, #74b9ff, #0984e3);
+            transform: scale(1.05);
+        }
+
+        .chapter-btn.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .chapter-btn.completed {
+            border-color: #00b894;
+            background: linear-gradient(145deg, #00b894, #00a381);
+        }
+
+        .chapter-num {
+            font-size: 0.8em;
+            color: #ffeaa7;
+        }
+
+        .chapter-name {
+            font-size: 1em;
+            font-weight: bold;
+        }
+
+        /* Battle Screen */
+        #battle-screen {
+            display: none;
+        }
+
+        .battle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .battle-header h3 {
+            color: #feca57;
+        }
+
+        .resource-bar {
+            display: flex;
+            gap: 20px;
+            color: white;
+        }
+
+        .resource {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .resource-icon {
+            font-size: 1.5em;
+        }
+
+        #game-canvas {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #87CEEB 60%, #228B22 60%, #228B22 100%);
+            border: 3px solid #333;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 40%;
+            background: linear-gradient(to bottom, #228B22, #1a6b1a);
+        }
+
+        /* Bases */
+        .base {
+            position: absolute;
+            bottom: 40%;
+            width: 80px;
+            height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .player-base {
+            left: 20px;
+        }
+
+        .enemy-base {
+            right: 20px;
+        }
+
+        .base-building {
+            font-size: 60px;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+        }
+
+        .base-hp-bar {
+            width: 70px;
+            height: 8px;
+            background: #333;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .base-hp-fill {
+            height: 100%;
+            background: linear-gradient(to right, #ff6b6b, #ee5a5a);
+            transition: width 0.3s ease;
+        }
+
+        .enemy-base .base-hp-fill {
+            background: linear-gradient(to right, #a55eea, #8854d0);
+        }
+
+        /* Units */
+        .unit {
+            position: absolute;
+            bottom: 40%;
+            font-size: 40px;
+            transition: left 0.1s linear;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.5));
+        }
+
+        .unit.attacking {
+            animation: attack 0.3s ease infinite;
+        }
+
+        @keyframes attack {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(5px); }
+        }
+
+        .unit-hp {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+        }
+
+        .unit-hp-fill {
+            height: 100%;
+            background: #2ecc71;
+            border-radius: 2px;
+        }
+
+        /* Unit Selection Panel */
+        .unit-panel {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .unit-btn {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(145deg, #2d3436, #636e72);
+            border: 2px solid #74b9ff;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .unit-btn:hover:not(:disabled) {
+            background: linear-gradient(145deg, #74b9ff, #0984e3);
+            transform: scale(1.1);
+        }
+
+        .unit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .unit-btn .emoji {
+            font-size: 30px;
+        }
+
+        .unit-btn .cost {
+            font-size: 12px;
+            color: #ffeaa7;
+        }
+
+        .unit-btn .cooldown {
+            position: absolute;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 20px;
+            border-radius: 10px;
+        }
+
+        /* Money Generator */
+        .money-bar {
+            width: 100%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .money-fill {
+            height: 100%;
+            background: linear-gradient(to right, #f1c40f, #f39c12);
+            transition: width 0.1s linear;
+        }
+
+        /* Victory/Defeat Screen */
+        .result-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .result-box {
+            background: linear-gradient(145deg, #2d3436, #636e72);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 3px solid #feca57;
+        }
+
+        .result-box h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .victory h2 {
+            color: #2ecc71;
+        }
+
+        .defeat h2 {
+            color: #e74c3c;
+        }
+
+        .result-box p {
+            color: #fff;
+            margin-bottom: 20px;
+        }
+
+        /* Upgrade Shop */
+        #upgrade-shop {
+            display: none;
+            padding: 20px;
+        }
+
+        #upgrade-shop h2 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .shop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .upgrade-card {
+            background: linear-gradient(145deg, #2d3436, #636e72);
+            border: 2px solid #74b9ff;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .upgrade-card .emoji {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .upgrade-card h4 {
+            color: #feca57;
+            margin-bottom: 10px;
+        }
+
+        .upgrade-card p {
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            color: #dfe6e9;
+        }
+
+        .upgrade-card .level {
+            color: #74b9ff;
+            margin-bottom: 10px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #74b9ff;
+            border-radius: 4px;
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+        }
+
+        .coins-display {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: #feca57;
+            font-size: 1.2em;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <!-- Title Screen -->
+        <div id="title-screen">
+            <h1>🦛 하마 대전쟁 🦛</h1>
+            <p class="subtitle">Hippo Wars - 2025</p>
+
+            <div class="story-box">
+                <h3>📜 스토리</h3>
+                <p>
+                    2025년, 하마들이 분노하기 시작했다.<br><br>
+                    그것은 하마들이 사는 하마 마을과 마하 시티를 다른 동물들이 공격했기 때문이다.<br><br>
+                    다른 동물들이 공격하는 이유는 하마들이 발전을 너무 빠르게 했기 때문이다.<br><br>
+                    다행이 돼지가 하마 강연을 알려줬다.<br><br>
+                    나는 사실 하마가 되고 싶다. 많은 동물들이 우리 군대를 대군대라고 한다.<br><br>
+                    나는 우리 군대가 나중에 비밀 미션을 맡는 <strong>비밀특공대</strong>가 되는게 꿈이다!
+                </p>
+            </div>
+
+            <div>
+                <button class="btn btn-primary" onclick="showChapterSelect()">🎮 게임 시작</button>
+                <button class="btn btn-secondary" onclick="showUpgradeShop()">🏪 상점</button>
+            </div>
+        </div>
+
+        <!-- Chapter Select -->
+        <div id="chapter-select">
+            <button class="btn btn-secondary back-btn" onclick="showTitleScreen()">← 뒤로</button>
+            <div class="coins-display">💰 <span id="total-coins">0</span></div>
+            <h2>🗺️ 월드 맵 - 장 선택</h2>
+            <div class="chapter-grid" id="chapter-grid">
+                <!-- Chapters will be generated by JS -->
+            </div>
+        </div>
+
+        <!-- Battle Screen -->
+        <div id="battle-screen">
+            <div class="battle-header">
+                <h3 id="chapter-title">1장 - 홍콩</h3>
+                <div class="resource-bar">
+                    <div class="resource">
+                        <span class="resource-icon">💰</span>
+                        <span id="money">100</span>
+                    </div>
+                    <div class="resource">
+                        <span class="resource-icon">⚡</span>
+                        <span id="energy">100</span>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" onclick="retreatBattle()">🏳️ 퇴각</button>
+            </div>
+
+            <div id="game-canvas">
+                <div class="ground"></div>
+                <div class="base player-base">
+                    <div class="base-building">🏰</div>
+                    <div class="base-hp-bar">
+                        <div class="base-hp-fill" id="player-hp-bar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div class="base enemy-base">
+                    <div class="base-building">🏯</div>
+                    <div class="base-hp-bar">
+                        <div class="base-hp-fill" id="enemy-hp-bar" style="width: 100%"></div>
+                    </div>
+                </div>
+                <div id="units-container"></div>
+            </div>
+
+            <div class="money-bar">
+                <div class="money-fill" id="money-bar-fill" style="width: 0%"></div>
+            </div>
+
+            <div class="unit-panel" id="unit-panel">
+                <!-- Units will be generated by JS -->
+            </div>
+        </div>
+
+        <!-- Upgrade Shop -->
+        <div id="upgrade-shop">
+            <button class="btn btn-secondary back-btn" onclick="showTitleScreen()">← 뒤로</button>
+            <div class="coins-display">💰 <span id="shop-coins">0</span></div>
+            <h2>🏪 업그레이드 상점</h2>
+            <div class="shop-grid" id="shop-grid">
+                <!-- Upgrades will be generated by JS -->
+            </div>
+        </div>
+
+        <!-- Result Overlay -->
+        <div class="result-overlay" id="result-overlay">
+            <div class="result-box" id="result-box">
+                <h2 id="result-title">승리!</h2>
+                <p id="result-text">보상: 100 코인</p>
+                <button class="btn btn-primary" onclick="closeResult()">확인</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game Data
+        const chapters = [
+            { num: 1, name: "홍콩", nameEn: "Hong Kong" },
+            { num: 2, name: "중국", nameEn: "China" },
+            { num: 3, name: "몽골", nameEn: "Mongolia" },
+            { num: 4, name: "러시아", nameEn: "Russia" },
+            { num: 5, name: "한국", nameEn: "Korea" },
+            { num: 6, name: "일본", nameEn: "Japan" },
+            { num: 7, name: "대만", nameEn: "Taiwan" },
+            { num: 8, name: "필리핀", nameEn: "Philippines" },
+            { num: 9, name: "베트남", nameEn: "Vietnam" },
+            { num: 10, name: "캄보디아", nameEn: "Cambodia" },
+            { num: 11, name: "라오스", nameEn: "Laos" },
+            { num: 12, name: "미얀마", nameEn: "Myanmar" },
+            { num: 13, name: "인도", nameEn: "India" },
+            { num: 14, name: "파키스탄", nameEn: "Pakistan" },
+            { num: 15, name: "이란", nameEn: "Iran" },
+            { num: 16, name: "터키", nameEn: "Turkey" },
+            { num: 17, name: "그리스", nameEn: "Greece" },
+            { num: 18, name: "불가리아", nameEn: "Bulgaria" },
+            { num: 19, name: "세르비아", nameEn: "Serbia" },
+            { num: 20, name: "보스니아", nameEn: "Bosnia" },
+            { num: 21, name: "몬테네그로", nameEn: "Montenegro" },
+            { num: 22, name: "코소보", nameEn: "Kosovo" },
+            { num: 23, name: "알바니아", nameEn: "Albania" },
+            { num: 24, name: "이탈리아", nameEn: "Italy" },
+            { num: 25, name: "프랑스", nameEn: "France" },
+            { num: 26, name: "스페인", nameEn: "Spain" },
+            { num: 27, name: "영국", nameEn: "UK" },
+            { num: 28, name: "아이슬란드", nameEn: "Iceland" },
+            { num: 29, name: "그린란드", nameEn: "Greenland" },
+            { num: 30, name: "캐나다", nameEn: "Canada" },
+            { num: 31, name: "알래스카", nameEn: "Alaska" },
+            { num: 32, name: "하와이", nameEn: "Hawaii" },
+            { num: 33, name: "뉴질랜드", nameEn: "New Zealand" },
+            { num: 34, name: "호주", nameEn: "Australia" },
+            { num: 35, name: "인도네시아", nameEn: "Indonesia" },
+            { num: 36, name: "말레이시아", nameEn: "Malaysia" },
+            { num: 37, name: "태국", nameEn: "Thailand" },
+            { num: 38, name: "미얀마", nameEn: "Burma" },
+            { num: 39, name: "오만", nameEn: "Oman" },
+            { num: 40, name: "예멘", nameEn: "Yemen" },
+            { num: 41, name: "수단", nameEn: "Sudan" },
+            { num: 42, name: "이집트", nameEn: "Egypt" },
+            { num: 43, name: "남아프리카", nameEn: "South Africa" },
+            { num: 44, name: "아르헨티나", nameEn: "Argentina" },
+            { num: 45, name: "칠레", nameEn: "Chile" },
+            { num: 46, name: "브라질", nameEn: "Brazil" },
+            { num: 47, name: "멕시코", nameEn: "Mexico" },
+            { num: 48, name: "미국", nameEn: "USA" },
+            { num: 49, name: "폼페이", nameEn: "Pompeii" }
+        ];
+
+        // Player Units (Hippo Army)
+        const playerUnits = [
+            { id: 'basic', name: '아기 하마', emoji: '🦛', cost: 50, hp: 100, atk: 20, speed: 2, range: 50, cooldown: 1000 },
+            { id: 'tank', name: '탱크 하마', emoji: '🦏', cost: 150, hp: 400, atk: 30, speed: 1, range: 40, cooldown: 3000 },
+            { id: 'fast', name: '스피드 하마', emoji: '🐗', cost: 75, hp: 60, atk: 15, speed: 4, range: 45, cooldown: 800 },
+            { id: 'range', name: '돼지 궁수', emoji: '🐷', cost: 100, hp: 80, atk: 40, speed: 1.5, range: 150, cooldown: 2000 },
+            { id: 'heavy', name: '코끼리 전사', emoji: '🐘', cost: 300, hp: 800, atk: 60, speed: 0.8, range: 60, cooldown: 5000 },
+            { id: 'special', name: '비밀특공대', emoji: '🦸', cost: 500, hp: 500, atk: 100, speed: 3, range: 80, cooldown: 8000 }
+        ];
+
+        // Enemy Units
+        const enemyTypes = [
+            { id: 'dog', name: '개', emoji: '🐕', hp: 80, atk: 15, speed: 2.5, range: 40 },
+            { id: 'cat', name: '고양이', emoji: '🐈', hp: 50, atk: 25, speed: 3, range: 35 },
+            { id: 'wolf', name: '늑대', emoji: '🐺', hp: 150, atk: 35, speed: 2, range: 45 },
+            { id: 'bear', name: '곰', emoji: '🐻', hp: 400, atk: 50, speed: 1, range: 50 },
+            { id: 'lion', name: '사자', emoji: '🦁', hp: 300, atk: 70, speed: 1.5, range: 55 },
+            { id: 'dragon', name: '드래곤', emoji: '🐉', hp: 1000, atk: 100, speed: 0.5, range: 100 }
+        ];
+
+        // Game State
+        let gameState = {
+            coins: parseInt(localStorage.getItem('hippoCoins') || '500'),
+            completedChapters: JSON.parse(localStorage.getItem('completedChapters') || '[]'),
+            upgrades: JSON.parse(localStorage.getItem('upgrades') || '{}')
+        };
+
+        // Battle State
+        let battleState = {
+            running: false,
+            currentChapter: null,
+            money: 100,
+            maxMoney: 5000,
+            moneyRate: 50,
+            moneyProgress: 0,
+            playerHP: 1000,
+            enemyHP: 1000,
+            playerUnits: [],
+            enemyUnits: [],
+            cooldowns: {},
+            lastUpdate: 0,
+            animationFrame: null
+        };
+
+        // Upgrade definitions
+        const upgrades = [
+            { id: 'money_rate', name: '자금 생산', emoji: '💰', desc: '초당 자금 생산량 증가', baseCost: 100, effect: 10 },
+            { id: 'base_hp', name: '기지 강화', emoji: '🏰', desc: '기지 체력 증가', baseCost: 150, effect: 200 },
+            { id: 'unit_hp', name: '유닛 체력', emoji: '❤️', desc: '모든 유닛 체력 증가', baseCost: 200, effect: 0.1 },
+            { id: 'unit_atk', name: '유닛 공격력', emoji: '⚔️', desc: '모든 유닛 공격력 증가', baseCost: 200, effect: 0.1 },
+            { id: 'start_money', name: '시작 자금', emoji: '🎁', desc: '전투 시작 자금 증가', baseCost: 100, effect: 50 }
+        ];
+
+        // Save game state
+        function saveGame() {
+            localStorage.setItem('hippoCoins', gameState.coins.toString());
+            localStorage.setItem('completedChapters', JSON.stringify(gameState.completedChapters));
+            localStorage.setItem('upgrades', JSON.stringify(gameState.upgrades));
+        }
+
+        // Screen navigation
+        function showTitleScreen() {
+            document.getElementById('title-screen').style.display = 'flex';
+            document.getElementById('chapter-select').style.display = 'none';
+            document.getElementById('battle-screen').style.display = 'none';
+            document.getElementById('upgrade-shop').style.display = 'none';
+            stopBattle();
+        }
+
+        function showChapterSelect() {
+            document.getElementById('title-screen').style.display = 'none';
+            document.getElementById('chapter-select').style.display = 'block';
+            document.getElementById('battle-screen').style.display = 'none';
+            document.getElementById('upgrade-shop').style.display = 'none';
+            document.getElementById('total-coins').textContent = gameState.coins;
+            renderChapters();
+        }
+
+        function showUpgradeShop() {
+            document.getElementById('title-screen').style.display = 'none';
+            document.getElementById('chapter-select').style.display = 'none';
+            document.getElementById('battle-screen').style.display = 'none';
+            document.getElementById('upgrade-shop').style.display = 'block';
+            document.getElementById('shop-coins').textContent = gameState.coins;
+            renderShop();
+        }
+
+        function showBattle(chapterNum) {
+            document.getElementById('title-screen').style.display = 'none';
+            document.getElementById('chapter-select').style.display = 'none';
+            document.getElementById('battle-screen').style.display = 'block';
+            document.getElementById('upgrade-shop').style.display = 'none';
+            startBattle(chapterNum);
+        }
+
+        // Render chapters
+        function renderChapters() {
+            const grid = document.getElementById('chapter-grid');
+            grid.innerHTML = '';
+
+            chapters.forEach((chapter, index) => {
+                const isUnlocked = index === 0 || gameState.completedChapters.includes(index);
+                const isCompleted = gameState.completedChapters.includes(chapter.num);
+
+                const btn = document.createElement('button');
+                btn.className = `chapter-btn ${isCompleted ? 'completed' : ''} ${!isUnlocked ? 'locked' : ''}`;
+                btn.innerHTML = `
+                    <div class="chapter-num">${chapter.num}장</div>
+                    <div class="chapter-name">${chapter.name}</div>
+                    <div style="font-size: 0.7em; color: #b2bec3;">${chapter.nameEn}</div>
+                `;
+
+                if (isUnlocked) {
+                    btn.onclick = () => showBattle(chapter.num);
+                }
+
+                grid.appendChild(btn);
+            });
+        }
+
+        // Render shop
+        function renderShop() {
+            const grid = document.getElementById('shop-grid');
+            grid.innerHTML = '';
+
+            upgrades.forEach(upgrade => {
+                const level = gameState.upgrades[upgrade.id] || 0;
+                const cost = upgrade.baseCost * (level + 1);
+
+                const card = document.createElement('div');
+                card.className = 'upgrade-card';
+                card.innerHTML = `
+                    <div class="emoji">${upgrade.emoji}</div>
+                    <h4>${upgrade.name}</h4>
+                    <p>${upgrade.desc}</p>
+                    <div class="level">레벨: ${level}</div>
+                    <button class="btn btn-primary" onclick="buyUpgrade('${upgrade.id}', ${cost})"
+                            ${gameState.coins < cost ? 'disabled' : ''}>
+                        💰 ${cost} 구매
+                    </button>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        function buyUpgrade(id, cost) {
+            if (gameState.coins >= cost) {
+                gameState.coins -= cost;
+                gameState.upgrades[id] = (gameState.upgrades[id] || 0) + 1;
+                saveGame();
+                document.getElementById('shop-coins').textContent = gameState.coins;
+                renderShop();
+            }
+        }
+
+        // Battle System
+        function startBattle(chapterNum) {
+            const chapter = chapters.find(c => c.num === chapterNum);
+            document.getElementById('chapter-title').textContent = `${chapter.num}장 - ${chapter.name}`;
+
+            // Calculate upgrades
+            const baseHPBonus = (gameState.upgrades['base_hp'] || 0) * 200;
+            const startMoneyBonus = (gameState.upgrades['start_money'] || 0) * 50;
+            const moneyRateBonus = (gameState.upgrades['money_rate'] || 0) * 10;
+
+            // Difficulty scaling
+            const difficulty = 1 + (chapterNum - 1) * 0.15;
+
+            battleState = {
+                running: true,
+                currentChapter: chapterNum,
+                money: 100 + startMoneyBonus,
+                maxMoney: 5000,
+                moneyRate: 50 + moneyRateBonus,
+                moneyProgress: 0,
+                playerHP: 1000 + baseHPBonus,
+                playerMaxHP: 1000 + baseHPBonus,
+                enemyHP: 800 + chapterNum * 100,
+                enemyMaxHP: 800 + chapterNum * 100,
+                playerUnits: [],
+                enemyUnits: [],
+                cooldowns: {},
+                lastUpdate: Date.now(),
+                difficulty: difficulty,
+                enemySpawnTimer: 0,
+                enemySpawnRate: Math.max(1500, 4000 - chapterNum * 50)
+            };
+
+            updateBattleUI();
+            renderUnitPanel();
+            document.getElementById('units-container').innerHTML = '';
+
+            // Start game loop
+            battleState.animationFrame = requestAnimationFrame(gameLoop);
+        }
+
+        function stopBattle() {
+            battleState.running = false;
+            if (battleState.animationFrame) {
+                cancelAnimationFrame(battleState.animationFrame);
+            }
+        }
+
+        function retreatBattle() {
+            stopBattle();
+            showChapterSelect();
+        }
+
+        function renderUnitPanel() {
+            const panel = document.getElementById('unit-panel');
+            panel.innerHTML = '';
+
+            playerUnits.forEach(unit => {
+                const btn = document.createElement('button');
+                btn.className = 'unit-btn';
+                btn.id = `unit-btn-${unit.id}`;
+                btn.innerHTML = `
+                    <div class="emoji">${unit.emoji}</div>
+                    <div class="cost">💰${unit.cost}</div>
+                `;
+                btn.onclick = () => spawnPlayerUnit(unit);
+                panel.appendChild(btn);
+            });
+        }
+
+        function spawnPlayerUnit(unitType) {
+            if (battleState.money < unitType.cost) return;
+            if (battleState.cooldowns[unitType.id] > Date.now()) return;
+
+            battleState.money -= unitType.cost;
+            battleState.cooldowns[unitType.id] = Date.now() + unitType.cooldown;
+
+            // Apply upgrades
+            const hpBonus = 1 + (gameState.upgrades['unit_hp'] || 0) * 0.1;
+            const atkBonus = 1 + (gameState.upgrades['unit_atk'] || 0) * 0.1;
+
+            const unit = {
+                ...unitType,
+                hp: unitType.hp * hpBonus,
+                maxHP: unitType.hp * hpBonus,
+                atk: unitType.atk * atkBonus,
+                x: 100,
+                isPlayer: true,
+                attacking: false,
+                attackCooldown: 0
+            };
+
+            battleState.playerUnits.push(unit);
+            renderUnit(unit);
+            updateBattleUI();
+        }
+
+        function spawnEnemyUnit() {
+            // Choose random enemy based on chapter difficulty
+            const maxEnemyIndex = Math.min(Math.floor(battleState.currentChapter / 8), enemyTypes.length - 1);
+            const enemyType = enemyTypes[Math.floor(Math.random() * (maxEnemyIndex + 1))];
+
+            const unit = {
+                ...enemyType,
+                id: enemyType.id + '_' + Date.now(),
+                hp: enemyType.hp * battleState.difficulty,
+                maxHP: enemyType.hp * battleState.difficulty,
+                atk: enemyType.atk * battleState.difficulty,
+                x: document.getElementById('game-canvas').offsetWidth - 100,
+                isPlayer: false,
+                attacking: false,
+                attackCooldown: 0
+            };
+
+            battleState.enemyUnits.push(unit);
+            renderUnit(unit);
+        }
+
+        function renderUnit(unit) {
+            const container = document.getElementById('units-container');
+            const div = document.createElement('div');
+            div.className = 'unit';
+            div.id = `unit-${unit.id}-${unit.isPlayer ? 'p' : 'e'}-${Date.now()}`;
+            div.style.left = unit.x + 'px';
+            div.style.transform = unit.isPlayer ? 'scaleX(1)' : 'scaleX(-1)';
+            div.innerHTML = `
+                <div class="unit-hp">
+                    <div class="unit-hp-fill" style="width: 100%"></div>
+                </div>
+                ${unit.emoji}
+            `;
+            container.appendChild(div);
+            unit.element = div;
+        }
+
+        function updateBattleUI() {
+            document.getElementById('money').textContent = Math.floor(battleState.money);
+            document.getElementById('player-hp-bar').style.width =
+                (battleState.playerHP / battleState.playerMaxHP * 100) + '%';
+            document.getElementById('enemy-hp-bar').style.width =
+                (battleState.enemyHP / battleState.enemyMaxHP * 100) + '%';
+            document.getElementById('money-bar-fill').style.width =
+                (battleState.moneyProgress * 100) + '%';
+
+            // Update unit buttons
+            playerUnits.forEach(unit => {
+                const btn = document.getElementById(`unit-btn-${unit.id}`);
+                if (btn) {
+                    const onCooldown = battleState.cooldowns[unit.id] > Date.now();
+                    const cantAfford = battleState.money < unit.cost;
+                    btn.disabled = onCooldown || cantAfford;
+                    btn.style.opacity = onCooldown ? '0.5' : (cantAfford ? '0.7' : '1');
+                }
+            });
+        }
+
+        function gameLoop(timestamp) {
+            if (!battleState.running) return;
+
+            const deltaTime = (Date.now() - battleState.lastUpdate) / 1000;
+            battleState.lastUpdate = Date.now();
+
+            // Generate money
+            battleState.moneyProgress += deltaTime * (battleState.moneyRate / 100);
+            if (battleState.moneyProgress >= 1) {
+                battleState.money = Math.min(battleState.money + battleState.moneyRate, battleState.maxMoney);
+                battleState.moneyProgress = 0;
+            }
+
+            // Spawn enemies
+            battleState.enemySpawnTimer += deltaTime * 1000;
+            if (battleState.enemySpawnTimer >= battleState.enemySpawnRate) {
+                spawnEnemyUnit();
+                battleState.enemySpawnTimer = 0;
+            }
+
+            // Update units
+            updateUnits(deltaTime);
+
+            // Check win/lose conditions
+            if (battleState.enemyHP <= 0) {
+                victory();
+                return;
+            }
+            if (battleState.playerHP <= 0) {
+                defeat();
+                return;
+            }
+
+            updateBattleUI();
+            battleState.animationFrame = requestAnimationFrame(gameLoop);
+        }
+
+        function updateUnits(deltaTime) {
+            const canvasWidth = document.getElementById('game-canvas').offsetWidth;
+            const allUnits = [...battleState.playerUnits, ...battleState.enemyUnits];
+
+            // Update player units
+            battleState.playerUnits.forEach((unit, index) => {
+                if (unit.hp <= 0) {
+                    if (unit.element) unit.element.remove();
+                    battleState.playerUnits.splice(index, 1);
+                    return;
+                }
+
+                // Find closest enemy
+                let closestEnemy = null;
+                let closestDist = Infinity;
+
+                battleState.enemyUnits.forEach(enemy => {
+                    const dist = enemy.x - unit.x;
+                    if (dist > 0 && dist < closestDist) {
+                        closestDist = dist;
+                        closestEnemy = enemy;
+                    }
+                });
+
+                // Check if can attack enemy base
+                const distToBase = canvasWidth - 100 - unit.x;
+
+                if (closestEnemy && closestDist <= unit.range) {
+                    // Attack enemy unit
+                    unit.attacking = true;
+                    unit.attackCooldown -= deltaTime * 1000;
+                    if (unit.attackCooldown <= 0) {
+                        closestEnemy.hp -= unit.atk;
+                        unit.attackCooldown = 500;
+                        updateUnitHP(closestEnemy);
+                    }
+                } else if (distToBase <= unit.range) {
+                    // Attack enemy base
+                    unit.attacking = true;
+                    unit.attackCooldown -= deltaTime * 1000;
+                    if (unit.attackCooldown <= 0) {
+                        battleState.enemyHP -= unit.atk;
+                        unit.attackCooldown = 500;
+                    }
+                } else {
+                    // Move forward
+                    unit.attacking = false;
+                    unit.x += unit.speed * deltaTime * 60;
+                }
+
+                // Update visual
+                if (unit.element) {
+                    unit.element.style.left = unit.x + 'px';
+                    unit.element.classList.toggle('attacking', unit.attacking);
+                }
+            });
+
+            // Update enemy units
+            battleState.enemyUnits.forEach((unit, index) => {
+                if (unit.hp <= 0) {
+                    if (unit.element) unit.element.remove();
+                    battleState.enemyUnits.splice(index, 1);
+                    return;
+                }
+
+                // Find closest player unit
+                let closestPlayer = null;
+                let closestDist = Infinity;
+
+                battleState.playerUnits.forEach(player => {
+                    const dist = unit.x - player.x;
+                    if (dist > 0 && dist < closestDist) {
+                        closestDist = dist;
+                        closestPlayer = player;
+                    }
+                });
+
+                // Check if can attack player base
+                const distToBase = unit.x - 100;
+
+                if (closestPlayer && closestDist <= unit.range) {
+                    // Attack player unit
+                    unit.attacking = true;
+                    unit.attackCooldown -= deltaTime * 1000;
+                    if (unit.attackCooldown <= 0) {
+                        closestPlayer.hp -= unit.atk;
+                        unit.attackCooldown = 500;
+                        updateUnitHP(closestPlayer);
+                    }
+                } else if (distToBase <= unit.range) {
+                    // Attack player base
+                    unit.attacking = true;
+                    unit.attackCooldown -= deltaTime * 1000;
+                    if (unit.attackCooldown <= 0) {
+                        battleState.playerHP -= unit.atk;
+                        unit.attackCooldown = 500;
+                    }
+                } else {
+                    // Move forward
+                    unit.attacking = false;
+                    unit.x -= unit.speed * deltaTime * 60;
+                }
+
+                // Update visual
+                if (unit.element) {
+                    unit.element.style.left = unit.x + 'px';
+                    unit.element.classList.toggle('attacking', unit.attacking);
+                }
+            });
+        }
+
+        function updateUnitHP(unit) {
+            if (unit.element) {
+                const hpBar = unit.element.querySelector('.unit-hp-fill');
+                if (hpBar) {
+                    hpBar.style.width = Math.max(0, (unit.hp / unit.maxHP) * 100) + '%';
+                }
+            }
+        }
+
+        function victory() {
+            stopBattle();
+            const reward = 50 + battleState.currentChapter * 20;
+            gameState.coins += reward;
+
+            if (!gameState.completedChapters.includes(battleState.currentChapter)) {
+                gameState.completedChapters.push(battleState.currentChapter);
+            }
+
+            saveGame();
+
+            const resultBox = document.getElementById('result-box');
+            resultBox.className = 'result-box victory';
+            document.getElementById('result-title').textContent = '🎉 승리! 🎉';
+            document.getElementById('result-text').textContent = `보상: ${reward} 코인`;
+            document.getElementById('result-overlay').style.display = 'flex';
+        }
+
+        function defeat() {
+            stopBattle();
+
+            const resultBox = document.getElementById('result-box');
+            resultBox.className = 'result-box defeat';
+            document.getElementById('result-title').textContent = '💀 패배... 💀';
+            document.getElementById('result-text').textContent = '다시 도전하세요!';
+            document.getElementById('result-overlay').style.display = 'flex';
+        }
+
+        function closeResult() {
+            document.getElementById('result-overlay').style.display = 'none';
+            showChapterSelect();
+        }
+
+        // Initialize
+        showTitleScreen();
+    </script>
+</body>
+</html>
