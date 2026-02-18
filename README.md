@@ -1,25 +1,77 @@
-# -DOMINANCE-RELATIVE-WEIGHT-ANALYSIS
-Code Overview
-Data Simulation:
+# Dominance and Relative Weight Analysis in Stata
 
-Means and Standard Deviations: The code initializes the mean and standard deviation matrices for the variables.
+Stata code for conducting dominance analysis and relative weight analysis to assess the relative importance of predictors in regression models. Includes bootstrap standard errors for statistical inference.
 
-Correlation Matrix: The correlation matrix is specified to define the relationships between the variables.
+## Overview
 
-Data Generation: corr2data is used to generate a dataset based on the specified means, standard deviations, and correlations.
-Partial Correlation:
+Standard regression coefficients can be misleading when predictors are correlated. Dominance analysis and relative weight analysis provide complementary approaches to decompose the explained variance (R-squared) among predictors, giving a clearer picture of each predictor's unique contribution.
 
-The code runs a multiple regression and calculates partial correlations for the variables of interest.
+This repository provides ready-to-use Stata `.do` files that implement both methods using the `domin` package.
 
-Dominance Analysis:
-This analysis identifies the relative importance of predictors in the regression model.
-Relative Weight Analysis:
+## Files
 
-Relative weights of predictors are calculated to assess their contribution to the variance explained by the model.
-Bootstrap Standard Errors:
+| File | Description |
+|------|-------------|
+| `dominance_analysis.do` | Self-contained example using simulated data from a correlation matrix |
+| `dominance_analysis_research.do` | Research template with a reusable program for batch analysis across multiple DVs |
 
-The code employs bootstrapping to estimate the standard errors of the dominance and relative weight analyses, enhancing the robustness of the results.
+## What's Included
 
-References
-The analyses are informed by:
-Tonidandel, S., & LeBreton, J. M. (2011). Relative Importance Analysis: A Useful Supplement to Regression Analysis. Journal of Business and Psychology, 26(1), 1–9. https://doi.org/10.1007/s10869-010-9204-3
+### `dominance_analysis.do`
+
+A step-by-step walkthrough that:
+
+1. Simulates standardized data from a user-specified correlation matrix (`corr2data`)
+2. Runs partial correlation analysis (`pcorr`)
+3. Performs dominance analysis (`domin`)
+4. Performs relative weight analysis (`domin` with `epsilon` option)
+5. Computes bootstrap standard errors (1,000 replications)
+
+### `dominance_analysis_research.do`
+
+A reusable Stata program (`dominanalysis`) designed for research with:
+
+- Control variables and covariates built into the program
+- Pairwise correlations, dominance analysis, relative weights, and bootstrap SEs in one call
+- Easy to extend for multiple dependent variables
+
+## Prerequisites
+
+Install the `domin` package in Stata:
+
+```stata
+ssc install domin
+```
+
+## Usage
+
+### Quick Start with Simulated Data
+
+Open `dominance_analysis.do` and modify the correlation matrix to match your data:
+
+```stata
+matrix input Corr = (1, .30, .30, .25, .25 \ ///
+                     .30, 1, .60, .60, .60 \ ///
+                     .30, .60, 1, .60, .60 \ ///
+                     .25, .60, .60, 1, .60 \ ///
+                     .25, .60, .60, .60, 1)
+```
+
+Then run the file in Stata.
+
+### Using the Research Template
+
+Customize the control variables and covariates in `dominance_analysis_research.do`, then call:
+
+```stata
+dominanalysis your_dv "iv1 iv2 iv3 iv4"
+```
+
+## References
+
+- Tonidandel, S., & LeBreton, J. M. (2011). Relative importance analysis: A useful supplement to regression analysis. *Journal of Business and Psychology*, 26(1), 1-9. https://doi.org/10.1007/s10869-010-9204-3
+- Azen, R., & Budescu, D. V. (2003). The dominance analysis approach for comparing predictors in multiple regression. *Psychological Methods*, 8(2), 129-148.
+
+## License
+
+MIT
